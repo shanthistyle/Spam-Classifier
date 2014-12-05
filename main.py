@@ -1,25 +1,53 @@
 import csv
+from Tree import Tree
 import math
 import random
-import collections
 
 def main(T):
 	forest = {}
-	data = getData()
-	features = data['features']
-	labels = [(data['labels'][i], features[i]) for i in range(len(features))]
+	trainData = getTrainingData()
+	trainFeatures = trainData['features']
+	trainLabels = [(trainData['labels'][i], trainFeatures[i]) for i in range(len(trainFeatures))]
+	trainingTrees = []
 	count = 0
-	featureIndices = []
 
 	while(count < T):
-		labelSubset = getSubset(labels)
+		labelSubset = getSubset(trainLabels)
 		tree = buildDecTree(labelSubset)
-		featureIndices.append(tree[1])
-		print(tree[1])
+		trainingTrees.append(tree)
 		count+=1
 
-	print(featureIndices)
-	
+	valData = getValData()
+	valFeatures = valData['features']
+	valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
+	countCorrect = 0
+
+	for tree in trainingTrees:
+		countCorrect = 0
+		for i in range(len(valLabels)):
+			label = valLabels[i][0]
+			temp = computeResult(tree, valLabels[i][1])
+			if temp == label:
+				countCorrect += 1
+
+		print(str((float(countCorrect)/len(valLabels))))
+
+def computeResult(tree, features):
+	while tree.left or tree.right:
+		if (features[tree.featureIndex] > tree.threshold):
+			# print("Feature: " + str(tree.featureIndex) + " > " + str(tree.threshold))
+			if tree.right:
+				tree = tree.right
+			else:
+				return tree.verdict
+		else:
+			# print("Feature: " + str(tree.featureIndex) + " <= " + str(tree.threshold))
+			if tree.left:
+				tree = tree.left
+			else:
+				return tree.verdict
+
+	return tree.verdict
 def getSubset(labels):
 	# labels = list of tuples: (labelVal = 0 or 1, [featureVals])
 	result = []
@@ -29,7 +57,7 @@ def getSubset(labels):
 		result.append(labels[random.randint(0, n-1)])
 	return result
 
-def getData():
+def getTrainingData():
 	result = {'features': [], 'labels': []}
 
 	with open('emailDataset/trainFeatures.csv', 'rb') as csvfile:
@@ -42,15 +70,24 @@ def getData():
 
 	return result
 
+def getValData():
+	result = {'features': [], 'labels': []}
 
-def Tree():
-	return collections.defaultdict(Tree)
+	with open('emailDataset/valFeatures.csv', 'rb') as csvfile:
+		features = csv.reader(csvfile, delimiter=',')
+		result['features'] = [[float(r) for r in row] for row in features]
+
+   	with open('emailDataset/valLabels.csv', 'rb') as csvfile:
+   		labels = csv.reader(csvfile, delimiter=' ')
+   		result['labels'] = [int(row[0]) for row in labels]
+
+   	return result
 
 def buildDecTree(labels):
 	# labels = list of tuples: (labelVal = 0 or 1, [featureVals])
 
 	same = True
-	stopCondition = len(labels[0][1]) == 1
+	stopCondition = len(labels) == 0 or len(labels[0][1]) == 1
 	t = Tree()
 
 	for j in range(len(labels)):
@@ -59,7 +96,15 @@ def buildDecTree(labels):
 			break;
 
 	if same or stopCondition:
-		t[1] = {'value': {'fIndex':null, 'fThreshold': labels[0][0]}}
+		t.right = None
+		t.left = None
+		t.featureIndex = None
+		t.threshold = None
+		if len(labels) > 0:
+			t.verdict = labels[0][0]
+		else:
+			t.verdict = 1
+
 		return t
 
 
@@ -77,7 +122,7 @@ def buildDecTree(labels):
 
 
 	for j in featureSubset:
-		currF = sorted(set([labels[i][1][j] for i in range(len(labels))])) # values of random feature for len(labels) emails
+		currF = sorted(set([labels[i][1][j] for i in range(len(labels)) if labels[i][1][j] != -1])) # values of random feature for len(labels) emails
 		thresholds = [(currF[i] + currF[i+1])/2 for i in range(len(currF) - 1)]
 
 		for k in range(len(thresholds)):
@@ -89,22 +134,24 @@ def buildDecTree(labels):
 	leftList, rightList = [], []
 
 	for j in range(len(labels)):
-		if labels[j][1][maxFeatureIndex] <= maxThreshold:
+		if labels[j][1][maxFeatureIndex] != -1 and labels[j][1][maxFeatureIndex] <= maxThreshold:
 			temp = labels[j]
 			temp[1][maxFeatureIndex] = -1
 			leftList.append(temp)
-		else:
+		elif labels[j][1][maxFeatureIndex] != -1:
 			temp = labels[j]
 			temp[1][maxFeatureIndex] = -1
 			rightList.append(temp)
 
+	t = Tree()
+	t.featureIndex = maxFeatureIndex
+	t.threshold = maxThreshold
+	# print(str(t.featureIndex) + " <= " + str(t.threshold))
 	left = buildDecTree(leftList)
 	right = buildDecTree(rightList)
-
-	t[1] = {'value': {'fIndex':maxFeatureIndex, 'fThreshold': maxThreshold}}
-	print(t[1])
-	t[2][1] = left
-	t[2][2] = right
+	
+	t.left = left
+	t.right = right
 	return t
 
 def computeGain(labels, t, featureIndex):
@@ -123,8 +170,6 @@ def computeGain(labels, t, featureIndex):
 	entR = entropyCalc(right)
 
 	return ent - (len(left)/len(labels))*entL + (len(right)/len(labels))*entR
-
-	
 
 def entropyCalc(probList):
 	#probList = tuples of (label, featureVal) for a given feature
@@ -148,6 +193,6 @@ def entropyCalc(probList):
 
 
 
-main(1)
+main(25)
 
 

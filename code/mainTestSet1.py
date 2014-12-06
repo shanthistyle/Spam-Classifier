@@ -22,7 +22,7 @@ def main(T):
 	valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
 	# testData = getTestData()
 	# testFeatures = testData['features']
-	with open('emailOutput25.csv', 'wb') as csvfile:
+	with open('emailOutput1.csv', 'wb') as csvfile:
 		testwriter = csv.writer(csvfile, delimiter=' ',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
     	
@@ -247,6 +247,6 @@ def entropyCalc(probList):
 
 
 
-main(25)
+main(1)
 
 

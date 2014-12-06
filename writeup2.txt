@@ -1,0 +1,13 @@
+a. 
+
+T = 1: 61.2% error (38.6% accurate)
+T = 2: 19% error (81% accurate)
+T = 5: 18% error (82% accurate)
+T = 10: 14.8% error (85.2% accurate)
+T = 25: 12.4% error (87.6% accurate)
+
+b. If the number of 1's is greater than or equal to the number of 0's (in the tree decisions output), choose 1. Otherwise choose 0.
+
+c. If the set is all the same (spam or not spam), or if the length of the set is 1, return a leaf node representing the value of the set. (An empty set is never fed into the function).
+
+d. Didn't deviate.

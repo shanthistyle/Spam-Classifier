@@ -17,11 +17,9 @@ def main(T):
 		trainingTrees.append(tree)
 		count+=1
 
-	# valData = getValData()
-	# valFeatures = valData['features']
-	# valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
-	testData = getTestData()
-	testFeatres = testData['features']
+	valData = getValData()
+	valFeatures = valData['features']
+	valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
 	countCorrect = 0
 	for i in range(len(valLabels)):
 		
@@ -39,14 +37,6 @@ def main(T):
 			countCorrect+=1
 
 	print(str((float(countCorrect)/len(valLabels))))
-def getTestData():
-	result = {'features': [], 'labels': []}
-
-	with open('emailDataset/testFeatures.csv', 'rb') as csvfile:
-		features = csv.reader(csvfile, delimiter=',')
-		result['features'] = [[float(r) for r in row] for row in features]
-
-   	return result
 
 def computeResult(tree, features):
 	while tree.left and tree.right:

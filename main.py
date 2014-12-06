@@ -17,23 +17,39 @@ def main(T):
 		trainingTrees.append(tree)
 		count+=1
 
-	valData = getValData()
-	valFeatures = valData['features']
-	valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
+	# valData = getValData()
+	# valFeatures = valData['features']
+	# valLabels = [(valData['labels'][i], valFeatures[i]) for i in range(len(valFeatures))]
+	testData = getTestData()
+	testFeatres = testData['features']
 	countCorrect = 0
+	for i in range(len(valLabels)):
+		
+		label = valLabels[i][0]
+		resultList = []
 
-	for tree in trainingTrees:
-		countCorrect = 0
-		for i in range(len(valLabels)):
-			label = valLabels[i][0]
+		for tree in trainingTrees:
 			temp = computeResult(tree, valLabels[i][1])
-			if temp == label:
-				countCorrect += 1
+			resultList.append(temp)
 
-		print(str((float(countCorrect)/len(valLabels))))
+		if (len([x for x in resultList if x == 1]) >= len(resultList)/2):
+			if (label == 1):
+				countCorrect+=1
+		elif label == 0:
+			countCorrect+=1
+
+	print(str((float(countCorrect)/len(valLabels))))
+def getTestData():
+	result = {'features': [], 'labels': []}
+
+	with open('emailDataset/testFeatures.csv', 'rb') as csvfile:
+		features = csv.reader(csvfile, delimiter=',')
+		result['features'] = [[float(r) for r in row] for row in features]
+
+   	return result
 
 def computeResult(tree, features):
-	while tree.left or tree.right:
+	while tree.left and tree.right:
 		if (features[tree.featureIndex] > tree.threshold):
 			# print("Feature: " + str(tree.featureIndex) + " > " + str(tree.threshold))
 			if tree.right:
@@ -122,7 +138,8 @@ def buildDecTree(labels):
 
 
 	for j in featureSubset:
-		currF = sorted(set([labels[i][1][j] for i in range(len(labels)) if labels[i][1][j] != -1])) # values of random feature for len(labels) emails
+		# currF = values of random feature for len(labels) emails
+		currF = sorted(set([labels[i][1][j] for i in range(len(labels)) if labels[i][1][j] != -1])) 
 		thresholds = [(currF[i] + currF[i+1])/2 for i in range(len(currF) - 1)]
 
 		for k in range(len(thresholds)):
@@ -147,11 +164,44 @@ def buildDecTree(labels):
 	t.featureIndex = maxFeatureIndex
 	t.threshold = maxThreshold
 	# print(str(t.featureIndex) + " <= " + str(t.threshold))
-	left = buildDecTree(leftList)
-	right = buildDecTree(rightList)
-	
-	t.left = left
-	t.right = right
+	if len(leftList) > 0 and len(rightList) > 0:
+		left = buildDecTree(leftList)
+		right = buildDecTree(rightList)
+		t.left = left
+		t.right = right
+
+	elif len(leftList) > 0:
+		temp = Tree()
+		temp.verdict = leftList[0][0]
+		temp2 = Tree()
+
+		if leftList[0][0]:
+			temp2.verdict = 0
+		else: 
+			temp2.verdict = 1
+
+
+		t.left = buildDecTree(leftList)
+		t.right = temp2
+	elif len(rightList) > 0:
+		temp = Tree()
+		temp.verdict = rightList[0][0]
+		temp2 = Tree()
+
+		if rightList[0][0]:
+			temp2.verdict = 0
+		else: 
+			temp2.verdict = 1
+
+
+		t.left = temp2
+		t.right = buildDecTree(rightList)
+	else:
+		count = len([elem[0] for elem in labels if elem[0] == 1])
+		if float(count)/len(labels) > .5:
+			t.verdict = 1
+		else:
+			t.verdict = 0
 	return t
 
 def computeGain(labels, t, featureIndex):
@@ -166,10 +216,10 @@ def computeGain(labels, t, featureIndex):
 	probList = [(labels[i][0], labels[i][1][featureIndex]) for i in range(len(labels))]
 
 	ent = entropyCalc(probList)
-	entL = entropyCalc(left)
 	entR = entropyCalc(right)
+	entL = entropyCalc(left)
 
-	return ent - (len(left)/len(labels))*entL + (len(right)/len(labels))*entR
+	return ent - ((len(left)/len(labels))*entL + (len(right)/len(labels))*entR)
 
 def entropyCalc(probList):
 	#probList = tuples of (label, featureVal) for a given feature
@@ -193,6 +243,6 @@ def entropyCalc(probList):
 
 
 
-main(25)
+main(2)
 
 
